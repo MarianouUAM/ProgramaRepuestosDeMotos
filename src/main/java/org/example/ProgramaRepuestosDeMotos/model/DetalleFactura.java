@@ -7,14 +7,13 @@ import org.openxava.annotations.*;
 import javax.persistence.*;
 import java.math.BigDecimal;
 
-
 @Embeddable
 @Getter @Setter
 public class DetalleFactura {
 
+    @Required
     private int cantidad;
 
-    // Sin @DescriptionsList para que salga la LUPA y el buscador por código
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Producto producto;
 
@@ -27,6 +26,7 @@ public class DetalleFactura {
     private BigDecimal precioUnitario;
 
     @Money
+    @ReadOnly
     @Depends("precioUnitario, cantidad")
     public BigDecimal getSubtotal() {
         if (precioUnitario == null) return BigDecimal.ZERO;

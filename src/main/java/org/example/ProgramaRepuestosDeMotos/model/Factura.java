@@ -4,14 +4,23 @@ import lombok.Getter;
 import lombok.Setter;
 import org.openxava.annotations.*;
 import org.openxava.calculators.CurrentDateCalculator;
+import org.openxava.jpa.XPersistence;
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collection;
-import java.util.Date; // <--- CAMBIO IMPORTANTE: Usar java.util.Date
+import java.util.Date;
 
 @Entity
 @Getter @Setter
+@View(members =
+        "numeroFactura, fecha;" + "cliente;" + "detalles;" + "observaciones;" + "subtotalBase;" + "porcentajeIVA, iva;" + "total;" + "cancela, cambio"
+)
 public class Factura extends BaseEntity {
+
+    @Column(length = 20)
+    @ReadOnly
+    private String numeroFactura;
 
     @DefaultValueCalculator(CurrentDateCalculator.class)
     @ReadOnly
@@ -22,21 +31,82 @@ public class Factura extends BaseEntity {
     private Cliente cliente;
 
     @ElementCollection
-    @ListProperties("producto.codigoSKU, producto.nombre, cantidad, precioUnitario, subtotal")
+    @ListProperties("producto.codigoSKU, producto.nombre, producto.categoria.nombre, cantidad, precioUnitario, subtotal")
     private Collection<DetalleFactura> detalles;
 
     @TextArea
     private String observaciones;
 
-    @Money
     @ReadOnly
-    public BigDecimal getTotal() {
+    @Money
+    @Depends("detalles")
+    public BigDecimal getSubtotalBase() {
         BigDecimal result = BigDecimal.ZERO;
         if (detalles != null) {
             for (DetalleFactura detalle : detalles) {
-                result = result.add(detalle.getSubtotal());
+                if (detalle.getSubtotal() != null) {
+                    result = result.add(detalle.getSubtotal());
+                }
             }
         }
         return result;
+    }
+
+    public int getPorcentajeIVA() {
+        return 15;
+    }
+
+    @ReadOnly
+    @Money
+    @Depends("subtotalBase")
+    public BigDecimal getIva() {
+        return getSubtotalBase()
+                .multiply(new BigDecimal(getPorcentajeIVA()))
+                .divide(new BigDecimal(100), 2, RoundingMode.HALF_UP);
+    }
+
+    @ReadOnly
+    @Money
+    @Depends("subtotalBase, iva")
+    public BigDecimal getTotal() {
+        return getSubtotalBase().add(getIva());
+    }
+
+    @Money
+    private BigDecimal cancela;
+
+    @ReadOnly
+    @Money
+    @Depends("total, cancela")
+    public BigDecimal getCambio() {
+        if (cancela == null) return BigDecimal.ZERO;
+        return cancela.subtract(getTotal());
+    }
+
+    @PrePersist
+    private void ejecutarAutomatizacion() {
+        generarCodigoUnico();
+        generarSalidasDeInventario();
+    }
+
+    private void generarCodigoUnico() {
+        Query query = XPersistence.getManager().createQuery("select count(f) from Factura f");
+        Long cantidad = (Long) query.getSingleResult();
+        this.numeroFactura = "FAC-" + String.format("%05d", cantidad + 1);
+    }
+
+    private void generarSalidasDeInventario() {
+        if (detalles == null) return;
+
+        for (DetalleFactura detalle : detalles) {
+            MovimientoInventario movimiento = new MovimientoInventario();
+            movimiento.setProducto(detalle.getProducto());
+            movimiento.setCantidad(detalle.getCantidad());
+            movimiento.setTipo(TipoMovimiento.SALIDA);
+            movimiento.setFecha(new Date());
+            movimiento.setReferencia("Venta Automática: " + this.numeroFactura);
+
+            XPersistence.getManager().persist(movimiento);
+        }
     }
 }
