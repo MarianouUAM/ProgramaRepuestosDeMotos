@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.openxava.annotations.*;
 import org.openxava.calculators.CurrentDateCalculator;
 import org.openxava.jpa.XPersistence;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -14,7 +15,14 @@ import java.util.Date;
 @Entity
 @Getter @Setter
 @View(members =
-        "numeroFactura, fecha;" + "cliente;" + "detalles;" + "observaciones;" + "subtotalBase;" + "porcentajeIVA, iva;" + "total;" + "cancela, cambio"
+        "numeroFactura, fecha;" +
+                "cliente;" +
+                "detalles;" +
+                "observaciones;" +
+                "subtotalBase;" +
+                "porcentajeIVA, iva;" +
+                "total;" +
+                "cancela, cambio"
 )
 public class Factura extends BaseEntity {
 
@@ -43,9 +51,9 @@ public class Factura extends BaseEntity {
     public BigDecimal getSubtotalBase() {
         BigDecimal result = BigDecimal.ZERO;
         if (detalles != null) {
-            for (DetalleFactura detalle : detalles) {
-                if (detalle.getSubtotal() != null) {
-                    result = result.add(detalle.getSubtotal());
+            for (DetalleFactura d : detalles) {
+                if (d.getSubtotal() != null) {
+                    result = result.add(d.getSubtotal());
                 }
             }
         }
@@ -90,7 +98,8 @@ public class Factura extends BaseEntity {
     }
 
     private void generarCodigoUnico() {
-        Query query = XPersistence.getManager().createQuery("select count(f) from Factura f");
+        Query query = XPersistence.getManager()
+                .createQuery("select count(f) from Factura f");
         Long cantidad = (Long) query.getSingleResult();
         this.numeroFactura = "FAC-" + String.format("%05d", cantidad + 1);
     }
@@ -98,15 +107,14 @@ public class Factura extends BaseEntity {
     private void generarSalidasDeInventario() {
         if (detalles == null) return;
 
-        for (DetalleFactura detalle : detalles) {
-            MovimientoInventario movimiento = new MovimientoInventario();
-            movimiento.setProducto(detalle.getProducto());
-            movimiento.setCantidad(detalle.getCantidad());
-            movimiento.setTipo(TipoMovimiento.SALIDA);
-            movimiento.setFecha(new Date());
-            movimiento.setReferencia("Venta Automática: " + this.numeroFactura);
-
-            XPersistence.getManager().persist(movimiento);
+        for (DetalleFactura d : detalles) {
+            MovimientoInventario m = new MovimientoInventario();
+            m.setProducto(d.getProducto());
+            m.setCantidad(d.getCantidad());
+            m.setTipo(TipoMovimiento.SALIDA);
+            m.setFecha(new Date());
+            m.setReferencia("Venta Automática: " + this.numeroFactura);
+            XPersistence.getManager().persist(m);
         }
     }
 }

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.example</groupId>
-	<artifactId>ProgramaRepuestosDeMotos</artifactId>
+	<artifactId>PichiRepuestos</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 

@@ -7,7 +7,6 @@ import lombok.*;
 import org.openxava.calculators.ICalculator;
 
 public class NumeroClienteCalculator implements ICalculator {public Object calculate() throws Exception {
-    // Consultamos el número más alto que exista actualmente en la tabla Cliente
     Query query = XPersistence.getManager()
             .createQuery("select max(c.nroCliente) from Cliente c");
 
@@ -21,7 +20,6 @@ public class NumeroClienteCalculator implements ICalculator {public Object calcu
             max = 0;
         }
     }
-
     return String.valueOf(max + 1);
 }
 }
