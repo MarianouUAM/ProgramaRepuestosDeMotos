@@ -30,10 +30,10 @@ public class SignInAction extends ForwardToOriginalURIBaseAction {
 
         Long count = (Long) query.getSingleResult();
 
-        /*if (count == 0L) {
+        if (count == 0L) {
             addError("unauthorized_user");
             return;
-        }*/
+        }
 
         SignInHelper.signIn(getRequest(), userName);
         getView().reset();

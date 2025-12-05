@@ -1,6 +1,5 @@
 package org.example.ProgramaRepuestosDeMotos.model;
 
-
 import lombok.Getter;
 import lombok.Setter;
 import org.openxava.annotations.*;
@@ -9,6 +8,7 @@ import org.example.ProgramaRepuestosDeMotos.calculators.PorcentajeIVACalculator;
 import org.openxava.jpa.XPersistence;
 
 import javax.persistence.*;
+import javax.validation.ValidationException;
 import javax.validation.constraints.Digits;
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -23,7 +23,7 @@ import java.util.Date;
                 "observaciones;" +
                 "subtotalBase, porcentajeIVA, iva;" +
                 "total;" +
-                "cancela, cambio"
+                "metodoPago, cancela, cambio"
 )
 public class Factura extends BaseEntity {
 
@@ -41,32 +41,36 @@ public class Factura extends BaseEntity {
 
     @ElementCollection
     @ListProperties(
-            "producto.codigoSKU, producto.nombre, producto.categoria.nombre, cantidad, precioUnitario, subtotal+[factura.iva, factura.subtotalBase, factura.porcentajeIVA, factura.total, factura.cancela, factura.cambio]"
+            "producto.codigoSKU, producto.nombre, producto.categoria.nombre, cantidad, precioUnitario, subtotal+[factura.iva, factura.subtotalBase, factura.porcentajeIVA, factura.total, factura.metodoPago, factura.cancela, factura.cambio]"
     )
     private Collection<DetalleFactura> detalles;
 
     @TextArea
     private String observaciones;
 
+    @Required
+    @Enumerated(EnumType.STRING)
+    MetodoPago metodoPago;
+
     @ReadOnly
     @Money
     @Calculation("sum(detalles.subtotal)")
-     BigDecimal subtotalBase;
+    private BigDecimal subtotalBase;
 
     @ReadOnly
     @Digits(integer=2, fraction=0)
     @DefaultValueCalculator(PorcentajeIVACalculator.class)
-     BigDecimal porcentajeIVA;
+    private BigDecimal porcentajeIVA;
 
     @ReadOnly
     @Money
     @Calculation("subtotalBase * porcentajeIVA / 100")
-     BigDecimal iva;
+    private BigDecimal iva;
 
     @ReadOnly
     @Money
     @Calculation("subtotalBase + iva")
-     BigDecimal total;
+    private BigDecimal total;
 
     @Money
     private BigDecimal cancela;
@@ -74,10 +78,23 @@ public class Factura extends BaseEntity {
     @ReadOnly
     @Money
     @Calculation("cancela - total")
-     BigDecimal cambio;
+    private BigDecimal cambio;
 
     @PrePersist
     private void ejecutarAutomatizacion() {
+
+        for (DetalleFactura d : detalles) {
+            Producto p = d.getProducto();
+
+            if (p.getStockActual() < d.getCantidad()) {
+                throw new ValidationException(
+                        "Inventario insuficiente para '" + p.getNombre() +
+                                "'. Stock disponible: " + p.getStockActual() +
+                                ", solicitado: " + d.getCantidad()
+                );
+            }
+        }
+
         generarCodigoUnico();
         generarSalidasDeInventario();
     }
@@ -86,6 +103,7 @@ public class Factura extends BaseEntity {
         Query query = XPersistence.getManager()
                 .createQuery("select count(f) from Factura f");
         Long cantidad = (Long) query.getSingleResult();
+        if (cantidad == null) cantidad = 0L;
         this.numeroFactura = "FAC-" + String.format("%05d", cantidad + 1);
     }
 
