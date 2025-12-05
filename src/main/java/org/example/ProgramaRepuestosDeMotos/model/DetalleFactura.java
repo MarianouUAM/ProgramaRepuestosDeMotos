@@ -2,7 +2,6 @@ package org.example.ProgramaRepuestosDeMotos.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.example.ProgramaRepuestosDeMotos.actions.ActualizarTotalesFactura;
 import org.example.ProgramaRepuestosDeMotos.calculators.PrecioProductoCalculator;
 import org.openxava.annotations.*;
 
@@ -14,11 +13,9 @@ import java.math.BigDecimal;
 public class DetalleFactura {
 
     @Required
-    @OnChange(ActualizarTotalesFactura.class)
     private int cantidad;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnChange(ActualizarTotalesFactura.class)
     private Producto producto;
 
     @ReadOnly

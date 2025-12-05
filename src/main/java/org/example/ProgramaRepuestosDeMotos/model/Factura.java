@@ -1,14 +1,16 @@
 package org.example.ProgramaRepuestosDeMotos.model;
 
+
 import lombok.Getter;
 import lombok.Setter;
 import org.openxava.annotations.*;
 import org.openxava.calculators.CurrentDateCalculator;
+import org.example.ProgramaRepuestosDeMotos.calculators.PorcentajeIVACalculator;
 import org.openxava.jpa.XPersistence;
 
 import javax.persistence.*;
+import javax.validation.constraints.Digits;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.Date;
 
@@ -19,8 +21,7 @@ import java.util.Date;
                 "cliente;" +
                 "detalles;" +
                 "observaciones;" +
-                "subtotalBase;" +
-                "porcentajeIVA, iva;" +
+                "subtotalBase, porcentajeIVA, iva;" +
                 "total;" +
                 "cancela, cambio"
 )
@@ -39,7 +40,9 @@ public class Factura extends BaseEntity {
     private Cliente cliente;
 
     @ElementCollection
-    @ListProperties("producto.codigoSKU, producto.nombre, producto.categoria.nombre, cantidad, precioUnitario, subtotal")
+    @ListProperties(
+            "producto.codigoSKU, producto.nombre, producto.categoria.nombre, cantidad, precioUnitario, subtotal+[factura.iva, factura.subtotalBase, factura.porcentajeIVA, factura.total, factura.cancela, factura.cambio]"
+    )
     private Collection<DetalleFactura> detalles;
 
     @TextArea
@@ -47,49 +50,31 @@ public class Factura extends BaseEntity {
 
     @ReadOnly
     @Money
-    @Depends("detalles")
-    public BigDecimal getSubtotalBase() {
-        BigDecimal result = BigDecimal.ZERO;
-        if (detalles != null) {
-            for (DetalleFactura d : detalles) {
-                if (d.getSubtotal() != null) {
-                    result = result.add(d.getSubtotal());
-                }
-            }
-        }
-        return result;
-    }
+    @Calculation("sum(detalles.subtotal)")
+     BigDecimal subtotalBase;
 
-    public int getPorcentajeIVA() {
-        return 15;
-    }
+    @ReadOnly
+    @Digits(integer=2, fraction=0)
+    @DefaultValueCalculator(PorcentajeIVACalculator.class)
+     BigDecimal porcentajeIVA;
 
     @ReadOnly
     @Money
-    @Depends("subtotalBase")
-    public BigDecimal getIva() {
-        return getSubtotalBase()
-                .multiply(new BigDecimal(getPorcentajeIVA()))
-                .divide(new BigDecimal(100), 2, RoundingMode.HALF_UP);
-    }
+    @Calculation("subtotalBase * porcentajeIVA / 100")
+     BigDecimal iva;
 
     @ReadOnly
     @Money
-    @Depends("subtotalBase, iva")
-    public BigDecimal getTotal() {
-        return getSubtotalBase().add(getIva());
-    }
+    @Calculation("subtotalBase + iva")
+     BigDecimal total;
 
     @Money
     private BigDecimal cancela;
 
     @ReadOnly
     @Money
-    @Depends("total, cancela")
-    public BigDecimal getCambio() {
-        if (cancela == null) return BigDecimal.ZERO;
-        return cancela.subtract(getTotal());
-    }
+    @Calculation("cancela - total")
+     BigDecimal cambio;
 
     @PrePersist
     private void ejecutarAutomatizacion() {
@@ -108,13 +93,13 @@ public class Factura extends BaseEntity {
         if (detalles == null) return;
 
         for (DetalleFactura d : detalles) {
-            MovimientoInventario m = new MovimientoInventario();
-            m.setProducto(d.getProducto());
-            m.setCantidad(d.getCantidad());
-            m.setTipo(TipoMovimiento.SALIDA);
-            m.setFecha(new Date());
-            m.setReferencia("Venta Automática: " + this.numeroFactura);
-            XPersistence.getManager().persist(m);
+            MovimientoInventario movimiento = new MovimientoInventario();
+            movimiento.setProducto(d.getProducto());
+            movimiento.setCantidad(d.getCantidad());
+            movimiento.setTipo(TipoMovimiento.SALIDA);
+            movimiento.setFecha(new Date());
+            movimiento.setReferencia("Venta Automática: " + this.numeroFactura);
+            XPersistence.getManager().persist(movimiento);
         }
     }
 }
