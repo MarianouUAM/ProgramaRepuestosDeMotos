@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Entity
 @Getter @Setter
 @View(members =
-        "codigoSKU, nombre;" + "categoria, marca, modelo;" + "descripcion;" + "precioVenta, costoCompra;" + "estado;" +
+        "codigoSKU, nombre;" + "categoria, marca, modelo;" + "descripcion;" + "precioVenta, costoCompra;" + "stockActual, estado;" +
                 "fotos"
 )
 public class Producto extends BaseEntity {
@@ -55,6 +55,9 @@ public class Producto extends BaseEntity {
 
     public void aumentarStock(int cantidad) {
         this.stockActual += cantidad;
+        if (this.stockActual > 0 && this.estado == EstadoProducto.AGOTADO) {
+            this.estado = EstadoProducto.DISPONIBLE;
+        }
     }
 
     public void disminuirStock(int cantidad) {
@@ -64,6 +67,9 @@ public class Producto extends BaseEntity {
                     "', pero solo tienes " + this.stockActual + " en inventario.");
         }
         this.stockActual -= cantidad;
+        if (this.stockActual == 0) {
+            this.estado = EstadoProducto.AGOTADO;
+        }
     }
 
     @PrePersist

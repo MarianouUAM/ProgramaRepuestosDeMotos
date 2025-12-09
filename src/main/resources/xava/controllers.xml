@@ -39,4 +39,25 @@ https://github.com/openxava/openxava/blob/master/openxavatest/src/main/resources
                 class="org.example.ProgramaRepuestosDeMotos.actions.SignInAction"/>
     </controller>
 
+    <controller name="Factura">
+        <extends controller="Typical"/>
+        <action name="agregarGarantia"
+                class="org.example.ProgramaRepuestosDeMotos.actions.InsertarGarantiaAction"
+                mode="detail"
+                icon="gavel"
+                label="Agregar Garantía"/>
+    </controller>
+
+
+    <controller name="Producto">
+        <extends controller="Typical"/>
+        <action name="descontinuar"
+                class="org.example.ProgramaRepuestosDeMotos.actions.DescontinuarProductoAction"
+                mode="list"
+                icon="close-octagon-outline"
+                confirm="true"
+                label="Descontinuar Selección"/>
+
+    </controller>
+
 </controllers>
