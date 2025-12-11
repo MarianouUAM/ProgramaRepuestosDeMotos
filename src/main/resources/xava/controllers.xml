@@ -32,5 +32,40 @@ https://github.com/openxava/openxava/blob/master/openxavatest/src/main/resources
     	</action>
 	</controller>    
     -->
+    <controller name="SignIn">
+        <action name="init" on-init="true" hidden="true"
+                class="com.openxava.naviox.actions.InitSignInAction"/>
+        <action name="signIn"
+                class="org.example.ProgramaRepuestosDeMotos.actions.SignInAction"/>
+    </controller>
+
+    <controller name="Factura">
+        <extends controller="Typical"/>
+        <action name="agregarGarantia"
+                class="org.example.ProgramaRepuestosDeMotos.actions.InsertarGarantiaAction"
+                mode="detail"
+                icon="gavel"
+                label="Agregar Garantía"/>
+    </controller>
     
+    <controller name="Producto">
+        <extends controller="Typical"/>
+        <action name="descontinuar"
+                class="org.example.ProgramaRepuestosDeMotos.actions.DescontinuarProductoAction"
+                mode="list"
+                icon="close-octagon-outline"
+                confirm="true"
+                label="Descontinuar Selección"/>
+    </controller>
+
+    <controller name="ControladorRentabilidad">
+        <extends controller="Navigation"/>
+        <extends controller="Print"/>
+        <action name="init"
+                class="org.example.ProgramaRepuestosDeMotos.actions.BloquearEdicionAction"
+                on-init="true"
+                hidden="true"/>
+    </controller>
+
+
 </controllers>

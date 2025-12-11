@@ -8,9 +8,15 @@
 	A default module for each entity is assumed with the
 	controllers on <default-module/>
 	-->
-	<default-module>		  
-		<controller name="Typical"/>		
+	<default-module>
+		<controller name="Typical"/>
 	</default-module>
+
+    <module name="AnalisisRentabilidad">
+        <model name="Producto"/>
+        <view name="AnalisisFinanciero"/>
+        <controller name="ControladorRentabilidad"/>
+    </module>
 	
 	<!-- 
 	You can define additional modules, for example:	  
