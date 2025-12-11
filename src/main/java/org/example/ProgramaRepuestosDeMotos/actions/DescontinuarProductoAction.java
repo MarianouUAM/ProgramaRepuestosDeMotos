@@ -19,7 +19,7 @@ public class DescontinuarProductoAction extends TabBaseAction {
 
                 Producto p = (Producto) MapFacade.findEntity("Producto", key);
 
-                p.setEstado(EstadoProducto.AGOTADO);
+                p.setEstado(EstadoProducto.DESCONTINUADO);
 
                 XPersistence.getManager().merge(p);
             }

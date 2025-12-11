@@ -4,17 +4,14 @@ import lombok.Getter;
 import lombok.Setter;
 import org.example.ProgramaRepuestosDeMotos.calculators.PrecioProductoCalculator;
 import org.openxava.annotations.*;
-
 import javax.persistence.*;
 import java.math.BigDecimal;
 
 @Embeddable
 @Getter @Setter
 public class DetalleFactura {
-
     @Required
     private int cantidad;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Producto producto;
 
@@ -23,14 +20,16 @@ public class DetalleFactura {
     @DefaultValueCalculator(
             value = PrecioProductoCalculator.class,
             properties = @PropertyValue(name = "productoId", from = "producto.id")
+
     )
     private BigDecimal precioUnitario;
-
     @Money
     @ReadOnly
     @Depends("precioUnitario, cantidad")
     public BigDecimal getSubtotal() {
         if (precioUnitario == null) return BigDecimal.ZERO;
         return precioUnitario.multiply(new BigDecimal(cantidad));
+
     }
+
 }

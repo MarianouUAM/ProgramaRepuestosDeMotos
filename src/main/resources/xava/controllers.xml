@@ -47,8 +47,7 @@ https://github.com/openxava/openxava/blob/master/openxavatest/src/main/resources
                 icon="gavel"
                 label="Agregar Garantía"/>
     </controller>
-
-
+    
     <controller name="Producto">
         <extends controller="Typical"/>
         <action name="descontinuar"
@@ -57,7 +56,16 @@ https://github.com/openxava/openxava/blob/master/openxavatest/src/main/resources
                 icon="close-octagon-outline"
                 confirm="true"
                 label="Descontinuar Selección"/>
-
     </controller>
+
+    <controller name="ControladorRentabilidad">
+        <extends controller="Navigation"/>
+        <extends controller="Print"/>
+        <action name="init"
+                class="org.example.ProgramaRepuestosDeMotos.actions.BloquearEdicionAction"
+                on-init="true"
+                hidden="true"/>
+    </controller>
+
 
 </controllers>
